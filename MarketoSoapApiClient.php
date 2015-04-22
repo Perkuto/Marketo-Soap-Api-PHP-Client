@@ -596,5 +596,60 @@ class MarketoSoapApiClient {
         return true;
 
     }
-    
+
+    /**
+     * Create or update custom object information
+     *
+     * `$client->syncCustomObjects();`
+     *
+     * @param string $operation CREATE, INSERT or UPSERT
+     * @param string $objectTypeName
+     * @param array $objects Array of associative array of custom object attributes
+     */
+    public function syncCustomObjects(
+        $operation,
+        $objectTypeName,
+        $objectUID,
+        $objects
+    ){
+        $keyAttrList   = array();
+        $attrListArray = array();
+        foreach($objects as $object) {
+            $keyAttrib            = new stdClass();
+            $keyAttrib->attrName  = $objectUID;
+            $keyAttrib->attrValue = $object[$objectUID];
+            $keyAttrList[]        = $keyAttrib;
+            unset($object[$objectUID]);
+            foreach($object as $attrName => $attrValue) {
+                $attrList            = new stdClass();
+                $attrList->attrName  = $attrName;
+                $attrList->attrValue = $attrValue;
+                $attrListArray[]     = $attrList;
+            }
+        }
+        $keyList             = new stdClass();
+        $keyList->attribute  = $keyAttrList;
+        $attrList            = new stdClass();
+        $attrList->attribute = $attrListArray;
+        $custObj             = new stdClass();
+        $custObj->customObjKeyList       = $keyList;
+        $custObj->customObjAttributeList = $attrList;
+        $custObjList            = new stdClass();
+        $custObjList->customObj = array($custObj);
+        $params                 = new stdClass;
+        $params->operation      = $operation;
+        $params->objectTypeName = $objectTypeName;
+        $params->customObjList  =  $custObj;
+
+        $result = $this->soapClient->__soapCall(
+            'syncCustomObjects',
+            array("paramsSyncLead" => $params),
+            $this->options,
+            $this->createMarketoSoapHeader()
+        );
+
+        $result = $result->result;
+        return $result;
+    }
+
 }
